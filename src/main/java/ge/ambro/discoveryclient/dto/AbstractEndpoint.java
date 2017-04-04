@@ -12,7 +12,7 @@ package ge.ambro.discoveryclient.dto;
 public abstract class AbstractEndpoint {
     protected String name;
     protected String path;
-    protected HttpMethod method;
+    protected String method;
 
     public String getName() {
         return name;
@@ -30,11 +30,11 @@ public abstract class AbstractEndpoint {
         this.path = path;
     }
 
-    public HttpMethod getMethod() {
+    public String getMethod() {
         return method;
     }
 
-    public void setMethod(HttpMethod method) {
+    public void setMethod(String method) {
         this.method = method;
     }
 

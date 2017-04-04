@@ -5,6 +5,7 @@
  */
 package ge.ambro.discoveryclient;
 
+import ge.ambro.discoveryclient.dto.ServiceDTO;
 import ge.ambro.discoveryclient.exeptions.DiscoveyServerNotAvailable;
 import ge.ambro.discoveryclient.exeptions.NoTargetFound;
 import ge.ambro.discoveryclient.exeptions.TargetNotAvailable;
@@ -56,50 +57,63 @@ public class DiscoveryClient {
         throw new DiscoveyServerNotAvailable();
     }
 
-    public void event(String name, String dataString) throws IOException {
+    public int register(ServiceDTO service) throws IOException {
         String discovery = findAvailableDiscoveryService();
         HttpURLConnection con = factory.createConnection(
-                Utils.concat(discovery, "api/v1/event-listeners?name=" + URLEncoder.encode(name, "UTF-8") + "&ts=" + ts)
+                Utils.concat(discovery, "api/v1/services")
         );
         con.setRequestProperty("Content-Type", "application/json");
-        con.setRequestMethod("GET");
+        con.setRequestMethod("POST");
+        con.setDoOutput(true);
+        System.out.println("service: " + new JSONObject(service));
+        con.getOutputStream().write(new JSONObject(service).toString().getBytes("UTF-8"));
         con.connect();
-        String res;
-        if (con.getResponseCode() == 304) {
-            res = eventCache.get(name);
-        } else {
-            res = Utils.readAll(con.getInputStream());
-            eventCache.clear();
-            eventCache.put(name, res);
-            ts = System.currentTimeMillis();
-        }
+        String res = Utils.readAll(con.getInputStream());
         con.disconnect();
-        JSONArray listeners = new JSONArray(res);
+        return Integer.parseInt(res);
+    }
+
+    public void event(String name, String dataString) throws IOException {
+        String discovery = findAvailableDiscoveryService();
+        long cachTs = eventCache.containsKey(name) ? ts : 0;
+        String res = makeRequest(
+                Utils.concat(discovery, "api/v1/event-listeners?name=" + URLEncoder.encode(name, "UTF-8") + "&ts=" + cachTs),
+                eventCache,
+                name
+        );
+        JSONObject listenerGroups = groupListeners(new JSONArray(res));
         JSONObject data = new JSONObject(dataString);
-        for (int i = 0; i < listeners.length(); i++) {
-            JSONObject listener = listeners.optJSONObject(i);
-            sendDataToTarget(listener, null, data);
+        for (String key : listenerGroups.keySet()) {
+            JSONArray listeners = listenerGroups.optJSONArray(key);
+            if (listeners == null) {
+                listeners = new JSONArray().put(listenerGroups.optJSONObject(key));
+            }
+            while (true) {
+                int index = chooseTarget(listeners);
+                JSONObject target = listeners.optJSONObject(index);
+                try {
+                    sendDataToTarget(target, null, data);
+                    break;
+                } catch (TargetNotAvailable ex) {
+                    notifyInvalidTarget(target);
+                    listeners.remove(index);
+                }
+            }
         }
     }
 
     public String target(String address, String dataString) throws IOException {
         String discovery = findAvailableDiscoveryService();
-        HttpURLConnection con = factory.createConnection(
-                Utils.concat(discovery, "api/v1/targets?address=" + URLEncoder.encode(address, "UTF-8") + "&ts=" + ts)
+        long cachTs = targetCache.containsKey(address) ? ts : 0;
+        String res = makeRequest(
+                Utils.concat(discovery, "api/v1/targets?address=" + URLEncoder.encode(address, "UTF-8") + "&ts=" + cachTs),
+                targetCache,
+                address
         );
-        con.setRequestProperty("Content-Type", "application/json");
-        con.setRequestMethod("GET");
-        con.connect();
-        String res;
-        if (con.getResponseCode() == 304) {
-            res = targetCache.get(address);
-        } else {
-            res = Utils.readAll(con.getInputStream());
-            targetCache.clear();
-            targetCache.put(address, res);
-            ts = System.currentTimeMillis();
+        System.out.println("res: " + res);
+        if (res == null) {
+            throw new NoTargetFound();
         }
-        con.disconnect();
         JSONObject response = new JSONObject(res);
         JSONArray targets = response.optJSONArray("targets");
         JSONObject resolves = response.optJSONObject("resolves");
@@ -122,6 +136,24 @@ public class DiscoveryClient {
         return resp;
     }
 
+    protected String makeRequest(String url, Map<String, String> cache, String key) throws IOException {
+        HttpURLConnection con = factory.createConnection(url);
+        con.setRequestProperty("Content-Type", "application/json");
+        con.setRequestMethod("GET");
+        con.connect();
+        String res;
+        if (con.getResponseCode() == 304) {
+            res = cache.get(key);
+        } else {
+            res = Utils.readAll(con.getInputStream());
+            cache.clear();
+            cache.put(key, res);
+            ts = System.currentTimeMillis();
+        }
+        con.disconnect();
+        return res;
+    }
+
     protected String sendDataToTarget(JSONObject target, JSONObject resolves, JSONObject data) throws IOException {
         JSONObject depData = sendDataToDependencies(
                 target.optJSONArray("dependencies"),
@@ -140,8 +172,10 @@ public class DiscoveryClient {
         }
         try {
             con.connect();
+
         } catch (IOException ex) {
-            Logger.getLogger(DiscoveryClient.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(DiscoveryClient.class
+                    .getName()).log(Level.SEVERE, null, ex);
             throw new TargetNotAvailable();
         }
         response = Utils.readAll(con.getInputStream());
@@ -174,6 +208,14 @@ public class DiscoveryClient {
         return data;
     }
 
+    protected JSONObject groupListeners(JSONArray listeners) {
+        JSONObject o = new JSONObject();
+        for (int i = 0; i < listeners.length(); i++) {
+            o.accumulate(listeners.optJSONObject(i).optString("service"), listeners.optJSONObject(i));
+        }
+        return o;
+    }
+
     protected int chooseTarget(JSONArray targets) {
         if (targets.length() == 0) {
             throw new NoTargetFound();
@@ -192,8 +234,10 @@ public class DiscoveryClient {
             con.setDoOutput(true);
             con.getOutputStream().write("{\"alive\": false}".getBytes());
             con.connect();
+
         } catch (IOException ex) {
-            Logger.getLogger(DiscoveryClient.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(DiscoveryClient.class
+                    .getName()).log(Level.SEVERE, null, ex);
         }
 
     }
