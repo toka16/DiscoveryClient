@@ -110,7 +110,6 @@ public class DiscoveryClient {
                 targetCache,
                 address
         );
-        System.out.println("res: " + res);
         if (res == null) {
             throw new NoTargetFound();
         }
@@ -167,8 +166,10 @@ public class DiscoveryClient {
         con.setRequestProperty("Content-Type", "application/json");
         con.setRequestMethod(target.optString("method"));
         if (depData != null) {
-            con.setDoOutput(true);
-            con.getOutputStream().write(depData.toString().getBytes("UTF-8"));
+            if (depData.length() > 1 || depData.opt("data") != null) {
+                con.setDoOutput(true);
+                con.getOutputStream().write(depData.toString().getBytes("UTF-8"));
+            }
         }
         try {
             con.connect();
