@@ -65,7 +65,6 @@ public class DiscoveryClient {
         con.setRequestProperty("Content-Type", "application/json");
         con.setRequestMethod("POST");
         con.setDoOutput(true);
-        System.out.println("service: " + new JSONObject(service));
         con.getOutputStream().write(new JSONObject(service).toString().getBytes("UTF-8"));
         con.connect();
         String res = Utils.readAll(con.getInputStream());
