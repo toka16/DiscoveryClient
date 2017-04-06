@@ -22,15 +22,18 @@ public class Utils {
 
     public static String concat(String str1, String str2) {
         String full = str1 + '/' + str2;
-        String after = full.substring(full.indexOf("://")+3);
-        return full.substring(0, full.indexOf("://"))+"://"+after.replaceAll("//+", "/");
+        String after = full.substring(full.indexOf("://") + 3);
+        return full.substring(0, full.indexOf("://")) + "://" + after.replaceAll("//+", "/");
     }
-    
-    public static Object strToJSON(String str){
-        if (str.startsWith("{")){
+
+    public static Object strToJSON(String str) {
+        if (str == null) {
+            return null;
+        }
+        if (str.startsWith("{")) {
             return new JSONObject(str);
         }
-        if (str.startsWith("[")){
+        if (str.startsWith("[")) {
             return new JSONArray(str);
         }
         return str;
