@@ -16,6 +16,9 @@ import java.net.URL;
 public class ConnectionFactory {
 
     public HttpURLConnection createConnection(String address) throws IOException {
-        return (HttpURLConnection) new URL(address).openConnection();
+        HttpURLConnection con = (HttpURLConnection) new URL(address).openConnection();
+        con.setConnectTimeout(5000);
+        con.setReadTimeout(3000);
+        return con;
     }
 }
