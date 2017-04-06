@@ -20,6 +20,6 @@ More about jitpack: https://jitpack.io/
 <dependency>
     <groupId>com.github.toka16</groupId>
     <artifactId>DiscoveryClient</artifactId>
-    <version>v0.1.1-alpha</version>
+    <version>v0.2.0-alpha</version>
 </dependency>
 ```
