@@ -42,7 +42,7 @@ public class DiscoveryFeature implements Feature {
         context.register(new AppEventListener(registrator));
         context.register(new DiscoveryDynamicResourceLoader(registrator, props.getProperty("app.path")));
 
-        // register discovery client
+        // injections
         context.register(new AbstractBinder() {
             @Override
             protected void configure() {
@@ -57,6 +57,22 @@ public class DiscoveryFeature implements Feature {
                         // pass
                     }
                 }).to(DiscoveryClient.class).in(Singleton.class);
+            }
+        });
+        context.register(new AbstractBinder() {
+            @Override
+            protected void configure() {
+                bindFactory(new Factory<DiscoveryRegistrator>() {
+                    @Override
+                    public DiscoveryRegistrator provide() {
+                        return registrator;
+                    }
+
+                    @Override
+                    public void dispose(DiscoveryRegistrator instance) {
+                        // pass
+                    }
+                }).to(DiscoveryRegistrator.class).in(Singleton.class);
             }
         });
 

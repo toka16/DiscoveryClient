@@ -26,6 +26,8 @@ public class AppEventListener implements ApplicationEventListener {
     public void onEvent(ApplicationEvent event) {
         if (event.getType() == ApplicationEvent.Type.INITIALIZATION_FINISHED) {
             registrator.register();
+        } else if (event.getType() == ApplicationEvent.Type.DESTROY_FINISHED) {
+            registrator.unregister();
         }
     }
 

@@ -224,22 +224,25 @@ public class DiscoveryClient {
     }
 
     protected void notifyInvalidTarget(JSONObject target) {
+        unregisterTarget(target.optInt("serviceId"));
+    }
+
+    public void unregisterTarget(int id) {
         try {
             String discovery = findAvailableDiscoveryService();
             HttpURLConnection con = factory.createConnection(
-                    Utils.concat(discovery, "api/v1/services/" + target.optLong("serviceId"))
+                    Utils.concat(discovery, "api/v1/services/" + id)
             );
             con.setRequestProperty("Content-Type", "application/json");
             con.setRequestMethod("PUT");
             con.setDoOutput(true);
             con.getOutputStream().write("{\"alive\": false}".getBytes());
             con.connect();
-
+            con.getResponseCode();
         } catch (IOException ex) {
             Logger.getLogger(DiscoveryClient.class
                     .getName()).log(Level.SEVERE, null, ex);
         }
-
     }
 
 }
