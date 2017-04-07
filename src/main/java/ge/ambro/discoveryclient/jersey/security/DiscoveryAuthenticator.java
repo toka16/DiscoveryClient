@@ -12,6 +12,7 @@ import ge.ambro.jerseyutils.security.Authenticator;
 import ge.ambro.jerseyutils.security.impl.SimpleSecurityContext;
 import ge.ambro.jerseyutils.security.impl.UsernamePrincipal;
 import ge.ambro.jerseyutils.security.model.AuthenticationData;
+import java.util.Date;
 import java.util.Objects;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.SecurityContext;
@@ -47,6 +48,9 @@ public class DiscoveryAuthenticator implements Authenticator {
         String token = authData.getToken();
         try {
             DecodedJWT jwt = validator.decodeToken(token);
+            if (jwt.getExpiresAt().before(new Date())) {
+                return null;
+            }
             return new SimpleSecurityContext(new UsernamePrincipal(jwt.getClaim("name").asString()), scheme)
                     .addRoles(jwt.getClaim("roles").asArray(String.class));
         } catch (JWTVerificationException ex) {

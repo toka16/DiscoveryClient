@@ -12,11 +12,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import java.io.UnsupportedEncodingException;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -47,10 +43,11 @@ public class JwtHelper {
 
     public String getToken() {
         if (token == null || expirationDate.before(new Date(new Date().getTime() + 5 * 60 * 1000))) {
-            expirationDate = new Date(new Date().getTime() + intervalMs);
+            Date expDate = new Date(new Date().getTime() + intervalMs);
             token = builder
-                    .withExpiresAt(expirationDate)
+                    .withExpiresAt(expDate)
                     .sign(algorithm);
+            expirationDate = expDate;
         }
         return token;
     }
