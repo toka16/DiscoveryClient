@@ -16,7 +16,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -43,7 +42,7 @@ public class DiscoveryClient {
 
     protected String findAvailableDiscoveryService() throws IOException {
         for (String address : discoveryAddresses) {
-            System.out.println("check address: " + Utils.concat(address, "/api/ping"));
+            DiscoveryClientLogger.LOGGER.log(Level.INFO, "check address: {0}", Utils.concat(address, "/api/ping"));
             try {
                 HttpURLConnection target = factory.createConnection(Utils.concat(address, "/api/ping"));
                 target.setRequestMethod("GET");
@@ -174,8 +173,7 @@ public class DiscoveryClient {
             con.connect();
 
         } catch (IOException ex) {
-            Logger.getLogger(DiscoveryClient.class
-                    .getName()).log(Level.SEVERE, null, ex);
+            DiscoveryClientLogger.LOGGER.log(Level.SEVERE, null, ex);
             throw new TargetNotAvailable();
         }
         response = Utils.readAll(con.getInputStream());
@@ -240,8 +238,7 @@ public class DiscoveryClient {
             con.connect();
             con.getResponseCode();
         } catch (IOException ex) {
-            Logger.getLogger(DiscoveryClient.class
-                    .getName()).log(Level.SEVERE, null, ex);
+            DiscoveryClientLogger.LOGGER.log(Level.SEVERE, null, ex);
         }
     }
 

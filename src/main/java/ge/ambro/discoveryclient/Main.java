@@ -18,7 +18,10 @@ import java.util.Arrays;
 class Main {
 
     public static void main(String[] args) throws IOException {
-        DiscoveryClient client = new DiscoveryClient(new ConnectionFactory(), "http://localhost:8080/DiscoveryService");
+        JwtHelper tf = new JwtHelper("ambro.belote", "secret");
+        tf.builder().withClaim("name", "temp")
+                .withArrayClaim("roles", new String[]{"role1", "role2"});
+        DiscoveryClient client = new DiscoveryClient(new ConnectionFactory(tf), "http://localhost:8080/DiscoveryService");
         String res = client.target("temp:generic", null);
         System.out.println(res);
         res = client.target("temp:bla", "my data");

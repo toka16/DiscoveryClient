@@ -7,12 +7,16 @@ package ge.ambro.discoveryclient.jersey;
 
 import ge.ambro.discoveryclient.ConnectionFactory;
 import ge.ambro.discoveryclient.DiscoveryClient;
+import ge.ambro.discoveryclient.DiscoveryClientLogger;
+import ge.ambro.discoveryclient.JwtHelper;
+import ge.ambro.discoveryclient.jersey.security.DiscoveryAuthenticationDataExtractor;
+import ge.ambro.discoveryclient.jersey.security.DiscoveryAuthenticator;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.Properties;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.inject.Singleton;
 import javax.ws.rs.core.Feature;
 import javax.ws.rs.core.FeatureContext;
@@ -32,7 +36,26 @@ public class DiscoveryFeature implements Feature {
         Properties props = readProperties();
 
         String[] ss = props.getProperty("discovery.server.address", "").split(",\\s*");
-        DiscoveryClient client = new DiscoveryClient(new ConnectionFactory(), ss);
+        String issuer = props.getProperty("discovery.security.issuer", "");
+        String secret = props.getProperty("discovery.security.secret", "");
+        String name = props.getProperty("discovery.security.name", "");
+        String[] roles = props.getProperty("discovery.security.roles", "").split(",\\s*");
+        DiscoveryClientLogger.LOGGER.log(Level.CONFIG, "discovery.security.issuer: {0}", issuer);
+        DiscoveryClientLogger.LOGGER.log(Level.CONFIG, "discovery.security.name: {0}", name);
+        DiscoveryClientLogger.LOGGER.log(Level.CONFIG, "discovery.security.roles: {0}", Arrays.toString(roles));
+        JwtHelper jh;
+        try {
+            jh = new JwtHelper(issuer, secret);
+            jh.builder()
+                    .withClaim("name", name)
+                    .withArrayClaim("roles", roles);
+        } catch (UnsupportedEncodingException ex) {
+            DiscoveryClientLogger.LOGGER.log(Level.SEVERE, null, ex);
+            DiscoveryClientLogger.LOGGER.log(Level.CONFIG, "Discovery feature not registered");
+            return false;
+        }
+
+        DiscoveryClient client = new DiscoveryClient(new ConnectionFactory(jh), ss);
 
         DiscoveryRegistrator registrator = new DiscoveryRegistrator(client);
         registrator.service.setBase(props.getProperty("discovery.base"));
@@ -41,6 +64,10 @@ public class DiscoveryFeature implements Feature {
 
         context.register(new AppEventListener(registrator));
         context.register(new DiscoveryDynamicResourceLoader(registrator, props.getProperty("app.path")));
+
+        //security
+        context.register(DiscoveryAuthenticationDataExtractor.class);
+        context.register(new DiscoveryAuthenticator(jh));
 
         // injections
         context.register(new AbstractBinder() {
@@ -84,7 +111,7 @@ public class DiscoveryFeature implements Feature {
         try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream(PROPERTIES_PATH)) {
             props.load(inputStream);
         } catch (IOException ex) {
-            Logger.getLogger(DiscoveryFeature.class.getName()).log(Level.SEVERE, null, ex);
+            DiscoveryClientLogger.LOGGER.log(Level.SEVERE, null, ex);
         }
         return props;
     }

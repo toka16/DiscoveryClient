@@ -15,8 +15,15 @@ import java.net.URL;
  */
 public class ConnectionFactory {
 
+    private final JwtHelper tokenFactory;
+
+    public ConnectionFactory(JwtHelper tokenFactory) {
+        this.tokenFactory = tokenFactory;
+    }
+
     public HttpURLConnection createConnection(String address) throws IOException {
         HttpURLConnection con = (HttpURLConnection) new URL(address).openConnection();
+        con.setRequestProperty("Authorization", "Discovery " + tokenFactory.getToken());
         con.setConnectTimeout(5000);
         con.setReadTimeout(3000);
         return con;
