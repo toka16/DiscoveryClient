@@ -144,9 +144,11 @@ public class DiscoveryClient {
 
     protected MultivaluedMap<String, EventResponseDTO> groupListeners(List<EventResponseDTO> listeners) {
         MultivaluedMap<String, EventResponseDTO> groups = new MultivaluedHashMap<>();
-        listeners.forEach((ev) -> {
-            groups.add(ev.getService(), ev);
-        });
+        if (listeners != null) {
+            listeners.forEach((ev) -> {
+                groups.add(ev.getService(), ev);
+            });
+        }
         return groups;
     }
 

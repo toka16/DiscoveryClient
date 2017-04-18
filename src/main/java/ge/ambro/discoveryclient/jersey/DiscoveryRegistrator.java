@@ -36,7 +36,7 @@ public class DiscoveryRegistrator {
 
     public void register() {
         try {
-            service.setId(client.register(service));
+            client.register(service);
         } catch (IOException | DiscoveryException ex) {
             DiscoveryClientLogger.LOGGER.log(Level.SEVERE, null, ex);
             if (registerAttempts++ < 3) {
