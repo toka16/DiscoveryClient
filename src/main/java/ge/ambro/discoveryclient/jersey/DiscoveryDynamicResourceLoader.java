@@ -5,9 +5,7 @@
  */
 package ge.ambro.discoveryclient.jersey;
 
-import ge.ambro.discoveryclient.dto.DependencyDTO;
 import ge.ambro.discoveryclient.dto.EventDTO;
-import ge.ambro.discoveryclient.dto.TargetDTO;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.net.URI;
@@ -36,25 +34,6 @@ public class DiscoveryDynamicResourceLoader implements DynamicFeature {
     @Override
     public void configure(ResourceInfo resourceInfo, FeatureContext context) {
         final AnnotatedMethod am = new AnnotatedMethod(resourceInfo.getResourceMethod());
-        if (am.isAnnotationPresent(DiscoveryTarget.class)) {
-            URI uri = UriBuilder.fromPath(rootPath)
-                    .path(resourceInfo.getResourceClass())
-                    .path(resourceInfo.getResourceMethod())
-                    .build();
-
-            DiscoveryTarget ma = am.getAnnotation(DiscoveryTarget.class);
-            TargetDTO target = new TargetDTO();
-            target.setName(ma.value());
-            target.setMethod(detectHttpMethod(resourceInfo.getResourceMethod()));
-            target.setPath(uri.toString());
-            target.setDependencies(Arrays.stream(ma.dependencies()).map((d) -> {
-                DependencyDTO dto = new DependencyDTO();
-                dto.setAddress(d.value());
-                dto.setPriority(d.priority());
-                return dto;
-            }).collect(Collectors.toList()));
-            registrator.addTarget(target);
-        }
         if (am.isAnnotationPresent(DiscoveryEvent.class)) {
             URI uri = UriBuilder.fromPath(rootPath)
                     .path(resourceInfo.getResourceClass())
@@ -64,19 +43,9 @@ public class DiscoveryDynamicResourceLoader implements DynamicFeature {
             DiscoveryEvent ma = am.getAnnotation(DiscoveryEvent.class);
             EventDTO event = new EventDTO();
             event.setName(ma.value());
-            event.setMethod(detectHttpMethod(resourceInfo.getResourceMethod()));
             event.setPath(uri.toString());
             registrator.addEvent(event);
         }
-    }
-
-    public String detectHttpMethod(Method m) {
-        for (Annotation an : m.getDeclaredAnnotations()) {
-            if (Arrays.asList("GET", "POST", "PUT", "DELETE").contains(an.annotationType().getSimpleName())) {
-                return an.annotationType().getSimpleName();
-            }
-        }
-        return null;
     }
 
 }
