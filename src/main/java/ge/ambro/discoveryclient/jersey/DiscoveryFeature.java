@@ -5,7 +5,6 @@
  */
 package ge.ambro.discoveryclient.jersey;
 
-import ge.ambro.discoveryclient.ConnectionFactory;
 import ge.ambro.discoveryclient.DiscoveryClient;
 import ge.ambro.discoveryclient.DiscoveryClientLogger;
 import ge.ambro.discoveryclient.JwtHelper;
@@ -55,9 +54,10 @@ public class DiscoveryFeature implements Feature {
             return false;
         }
 
-        DiscoveryClient client = new DiscoveryClient(new ConnectionFactory(jh), ss);
+        DiscoveryClient client = new DiscoveryClient(jh, ss);
 
         DiscoveryRegistrator registrator = new DiscoveryRegistrator(client);
+        registrator.service.setId(Integer.parseInt(props.getProperty("discovery.id")));
         registrator.service.setBase(props.getProperty("discovery.base"));
         registrator.service.setName(props.getProperty("discovery.name"));
         registrator.service.setServiceDescrip(props.getProperty("discovery.descrip"));

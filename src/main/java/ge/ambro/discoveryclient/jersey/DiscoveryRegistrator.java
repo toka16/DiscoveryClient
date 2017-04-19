@@ -9,7 +9,6 @@ import ge.ambro.discoveryclient.DiscoveryClient;
 import ge.ambro.discoveryclient.DiscoveryClientLogger;
 import ge.ambro.discoveryclient.dto.EventDTO;
 import ge.ambro.discoveryclient.dto.ServiceDTO;
-import ge.ambro.discoveryclient.dto.TargetDTO;
 import ge.ambro.discoveryclient.exeptions.DiscoveryException;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,12 +27,7 @@ public class DiscoveryRegistrator {
 
     public DiscoveryRegistrator(DiscoveryClient c) {
         client = c;
-        service.setTargets(new ArrayList<>());
         service.setEvents(new ArrayList<>());
-    }
-
-    public void addTarget(TargetDTO target) {
-        service.getTargets().add(target);
     }
 
     public void addEvent(EventDTO event) {
@@ -42,7 +36,7 @@ public class DiscoveryRegistrator {
 
     public void register() {
         try {
-            service.setId(client.register(service));
+            client.register(service);
         } catch (IOException | DiscoveryException ex) {
             DiscoveryClientLogger.LOGGER.log(Level.SEVERE, null, ex);
             if (registerAttempts++ < 3) {

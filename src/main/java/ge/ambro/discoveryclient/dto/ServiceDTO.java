@@ -17,9 +17,8 @@ public class ServiceDTO {
     private String name;
     private String serviceDescrip;
     private String base;
-    private List<TargetDTO> targets;
     private List<EventDTO> events;
-    private boolean alive;
+//    private boolean alive;
 
     public int getId() {
         return id;
@@ -53,14 +52,6 @@ public class ServiceDTO {
         this.base = base;
     }
 
-    public List<TargetDTO> getTargets() {
-        return targets;
-    }
-
-    public void setTargets(List<TargetDTO> targets) {
-        this.targets = targets;
-    }
-
     public List<EventDTO> getEvents() {
         return events;
     }
@@ -69,17 +60,16 @@ public class ServiceDTO {
         this.events = event;
     }
 
-    public boolean isAlive() {
-        return alive;
-    }
-
-    public void setAlive(boolean alive) {
-        this.alive = alive;
-    }
-
+//    public boolean isAlive() {
+//        return alive;
+//    }
+//
+//    public void setAlive(boolean alive) {
+//        this.alive = alive;
+//    }
     @Override
     public String toString() {
-        return "ServiceDTO{" + "id=" + id + ", name=" + name + ", serviceDescrip=" + serviceDescrip + ", base=" + base + ", targets=" + targets + ", event=" + events + ", alive=" + alive + '}';
+        return "ServiceDTO{" + "id=" + id + ", name=" + name + ", serviceDescrip=" + serviceDescrip + ", base=" + base + ", event=" + events + '}';
     }
 
 }

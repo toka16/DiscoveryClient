@@ -5,11 +5,12 @@
  */
 package ge.ambro.discoveryclient;
 
-import ge.ambro.discoveryclient.dto.DependencyDTO;
+import ge.ambro.discoveryclient.dto.EventDTO;
 import ge.ambro.discoveryclient.dto.ServiceDTO;
-import ge.ambro.discoveryclient.dto.TargetDTO;
 import java.io.IOException;
 import java.util.Arrays;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.MediaType;
 
 /**
  *
@@ -18,30 +19,97 @@ import java.util.Arrays;
 class Main {
 
     public static void main(String[] args) throws IOException {
-        JwtHelper tf = new JwtHelper("ambro.belote", "secret");
+        JwtHelper tf = new JwtHelper("ge.ambro.belote", "secret");
         tf.builder().withClaim("name", "temp")
-                .withArrayClaim("roles", new String[]{"role1", "role2"});
-        DiscoveryClient client = new DiscoveryClient(new ConnectionFactory(tf), "http://localhost:8080/DiscoveryService");
-        String res = client.target("temp:generic", null);
-        System.out.println(res);
-        res = client.target("temp:bla", "my data");
-
-//        ServiceDTO service = new ServiceDTO();
-//        service.setBase("http://localhost:8080/");
-//        service.setName("temp1");
-//        service.setServiceDescrip("dynamically added");
-//        TargetDTO target = new TargetDTO();
-//        target.setName("ble");
-//        target.setPath("/TestMaven/api/generic/ble");
-//        target.setMethod("POST");
-//        DependencyDTO dep = new DependencyDTO();
-//        dep.setAddress("temp:sec");
-//        dep.setPriority(0);
-//        target.setDependencies(Arrays.asList(dep));
-//        service.setTargets(Arrays.asList(target));
-//        client.register(service);
-//        res = client.target("temp1:ble", null);
+                .withArrayClaim("roles", new String[]{"microservice", "role2"});
+        DiscoveryClient client = new DiscoveryClient(tf, "http://localhost:8080/DiscoveryService");
+//        String res = client.target("temp:generic", null);
 //        System.out.println(res);
+//        res = client.target("temp:bla", "my data");
+
+//        client.target("temp2", (target, wrap) -> {
+//            String res = wrap.apply(target.path("api/generic").request()).get(String.class);
+//            System.out.println("res: " + res);
+//            return false;
+//        });
+//        client.event("my_event", (target, wrapper) -> {
+//            target.request().post(Entity.entity("bla", MediaType.APPLICATION_JSON));
+//            return false;
+//        });
+//        ServiceDTO service = new ServiceDTO();
+//        service.setId(4);
+//        service.setName("temp4");
+//        service.setBase("http://localhost:8080/TestMa");
+//        service.setServiceDescrip("dynamically added");
+//
+//        EventDTO ev = new EventDTO();
+//        ev.setName("my_event");
+//        ev.setPath("api/generic/bla");
+////        EventDTO ev2 = new EventDTO();
+////        ev2.setName("my_event");
+////        ev2.setPath("api/generic/bla");
+////        service.setEvents(Arrays.asList(ev, ev2));
+//        service.setEvents(Arrays.asList(ev));
+//
+//        client.register(service);
+//        
+//        client.target("signin", (target, wrapper) -> {
+//            try {
+//                target = target.path("api/v1/signin/check").queryParam("email", "asd@as.a");
+//                System.out.println("uri: " + target.getUri());
+//                boolean b = wrapper.apply(target
+//                        .request(MediaType.APPLICATION_JSON)).get(Boolean.class);
+//                System.out.println("check: " + b);
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+//            return true;
+//        });
+        client.target("signin", (target, wrapper) -> {
+            try {
+                CredentialsDTO cred = new CredentialsDTO();
+                cred.setEmail("asd@as.a");
+                cred.setUsername("my_user");
+                cred.setPassword("pass");
+                String res = wrapper.apply(target.path("api/v1/signin/register").request())
+                        .post(Entity.entity(cred, MediaType.APPLICATION_JSON), String.class);
+                System.out.println("res: " + res);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return true;
+        });
+        String res = client.target("signin", (target, wrapper) -> {
+            try {
+                CredentialsDTO cred = new CredentialsDTO();
+                cred.setEmail("asd@as.a");
+                cred.setPassword("pass");
+                return wrapper.apply(target.path("api/v1/signin/").request())
+                        .post(Entity.entity(cred, MediaType.APPLICATION_JSON), String.class);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null;
+        });
+        final String token = res;
+        res = client.target("signin", (target, wrapper) -> {
+            try {
+                return wrapper.apply(target.path("api/v1/signin/" + token).request())
+                        .get(String.class);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null;
+        });
+        final String profileId = res;
+        client.target("profile", (target, wrapper) -> {
+            String resp = wrapper.apply(target.path("api/v1/profile/" + profileId).request())
+                    .get(String.class);
+            System.out.println("resp: " + resp);
+            return null; //To change body of generated lambdas, choose Tools | Templates.
+        });
+//
+//        System.out.println("res: " + res);
     }
 
 }
