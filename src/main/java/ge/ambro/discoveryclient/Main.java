@@ -69,8 +69,9 @@ class Main {
             try {
                 CredentialsDTO cred = new CredentialsDTO();
                 cred.setEmail("asd@as.a");
+                cred.setUsername("my_user");
                 cred.setPassword("pass");
-                String res = wrapper.apply(target.path("api/v1/signin/").request())
+                String res = wrapper.apply(target.path("api/v1/signin/register").request())
                         .post(Entity.entity(cred, MediaType.APPLICATION_JSON), String.class);
                 System.out.println("res: " + res);
             } catch (Exception e) {
@@ -78,15 +79,35 @@ class Main {
             }
             return true;
         });
-//        String res = client.target("signin", (target, wrapper) -> {
-//            try {
-//                return wrapper.apply(target.path("api/v1/signin/8e088d82-396a-4da7-97ae-ac4082b67214").request())
-//                        .get(String.class);
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//            }
-//            return null;
-//        });
+        String res = client.target("signin", (target, wrapper) -> {
+            try {
+                CredentialsDTO cred = new CredentialsDTO();
+                cred.setEmail("asd@as.a");
+                cred.setPassword("pass");
+                return wrapper.apply(target.path("api/v1/signin/").request())
+                        .post(Entity.entity(cred, MediaType.APPLICATION_JSON), String.class);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null;
+        });
+        final String token = res;
+        res = client.target("signin", (target, wrapper) -> {
+            try {
+                return wrapper.apply(target.path("api/v1/signin/" + token).request())
+                        .get(String.class);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null;
+        });
+        final String profileId = res;
+        client.target("profile", (target, wrapper) -> {
+            String resp = wrapper.apply(target.path("api/v1/profile/" + profileId).request())
+                    .get(String.class);
+            System.out.println("resp: " + resp);
+            return null; //To change body of generated lambdas, choose Tools | Templates.
+        });
 //
 //        System.out.println("res: " + res);
     }
