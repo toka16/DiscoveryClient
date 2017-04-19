@@ -27,6 +27,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import org.glassfish.jersey.client.ClientProperties;
 
 /**
  *
@@ -46,7 +47,9 @@ public class DiscoveryClient {
     private final Map<String, List<EventResponseDTO>> eventCache;
 
     public DiscoveryClient(JwtHelper factory, String... addresses) {
-        client = ClientBuilder.newClient();
+        client = ClientBuilder.newClient()
+                .property(ClientProperties.CONNECT_TIMEOUT, 5000)
+                .property(ClientProperties.READ_TIMEOUT, 5000);
         discoveryAddresses = addresses;
 
         this.factory = factory;
@@ -99,19 +102,20 @@ public class DiscoveryClient {
             while (true) {
                 int index = chooseTarget(listeners);
                 EventResponseDTO target = listeners.get(index);
-                boolean isAlive = consumer.apply(client.target(target.getBase())
-                        .path(target.getPath()), this::wrap);
-                if (isAlive) {
+                try {
+                    consumer.apply(client.target(target.getBase())
+                            .path(target.getPath()), this::wrap);
                     break;
+                } catch (Exception e) {
+                    unregisterTarget(target.getServiceId());
+                    listeners.remove(index);
                 }
-                unregisterTarget(target.getServiceId());
-                listeners.remove(index);
             }
 
         });
     }
 
-    public void target(String name, BiFunction<WebTarget, Function<Builder, Builder>, Boolean> consumer) throws IOException {
+    public <T> T target(String name, BiFunction<WebTarget, Function<Builder, Builder>, T> consumer) throws IOException {
         long cachTs = targetCache.containsKey(name) ? ts : 0;
         Response response = wrap(findAvailableDiscoveryService()
                 .path("api/v1/targets")
@@ -133,12 +137,12 @@ public class DiscoveryClient {
         while (true) {
             int index = chooseTarget(targets);
             ServiceDTO target = targets.get(index);
-            boolean isAlive = consumer.apply(client.target(target.getBase()), this::wrap);
-            if (isAlive) {
-                break;
+            try {
+                return consumer.apply(client.target(target.getBase()), this::wrap);
+            } catch (Exception e) {
+                unregisterTarget(target.getId());
+                targets.remove(index);
             }
-            unregisterTarget(target.getId());
-            targets.remove(index);
         }
     }
 

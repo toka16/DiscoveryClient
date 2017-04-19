@@ -32,10 +32,10 @@ class Main {
 //            System.out.println("res: " + res);
 //            return false;
 //        });
-        client.event("my_event", (target, wrapper) -> {
-            target.request().post(Entity.entity("bla", MediaType.APPLICATION_JSON));
-            return false;
-        });
+//        client.event("my_event", (target, wrapper) -> {
+//            target.request().post(Entity.entity("bla", MediaType.APPLICATION_JSON));
+//            return false;
+//        });
 //        ServiceDTO service = new ServiceDTO();
 //        service.setId(4);
 //        service.setName("temp4");
@@ -53,24 +53,42 @@ class Main {
 //
 //        client.register(service);
 //        
-//        service = new ServiceDTO();
-//        service.setId(2);
-//        service.setName("temp2");
-//        service.setBase("http://localhost:8080/TestMaven");
-//        service.setServiceDescrip("dynamically added");
-//        client.register(service);
-//        TargetDTO target = new TargetDTO();
-//        target.setName("ble");
-//        target.setPath("/TestMaven/api/generic/ble");
-//        target.setMethod("POST");
-//        DependencyDTO dep = new DependencyDTO();
-//        dep.setAddress("temp:sec");
-//        dep.setPriority(0);
-//        target.setDependencies(Arrays.asList(dep));
-//        service.setTargets(Arrays.asList(target));
-//        client.register(service);
-//        res = client.target("temp1:ble", null);
-//        System.out.println(res);
+//        client.target("signin", (target, wrapper) -> {
+//            try {
+//                target = target.path("api/v1/signin/check").queryParam("email", "asd@as.a");
+//                System.out.println("uri: " + target.getUri());
+//                boolean b = wrapper.apply(target
+//                        .request(MediaType.APPLICATION_JSON)).get(Boolean.class);
+//                System.out.println("check: " + b);
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+//            return true;
+//        });
+        client.target("signin", (target, wrapper) -> {
+            try {
+                CredentialsDTO cred = new CredentialsDTO();
+                cred.setEmail("asd@as.a");
+                cred.setPassword("pass");
+                String res = wrapper.apply(target.path("api/v1/signin/").request())
+                        .post(Entity.entity(cred, MediaType.APPLICATION_JSON), String.class);
+                System.out.println("res: " + res);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return true;
+        });
+//        String res = client.target("signin", (target, wrapper) -> {
+//            try {
+//                return wrapper.apply(target.path("api/v1/signin/8e088d82-396a-4da7-97ae-ac4082b67214").request())
+//                        .get(String.class);
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+//            return null;
+//        });
+//
+//        System.out.println("res: " + res);
     }
 
 }
